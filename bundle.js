@@ -9,6 +9,9 @@ const history = [];
 
 let initialImageLoaded = false;
 
+let xkcdContainerOpen = false;
+
+let xkcdContainerEl;
 let imageEl;
 let overlayEl;
 let titleEl;
@@ -23,6 +26,7 @@ let randButtonEl;
 let imageButtons;
 
 function domLoaded() {
+	xkcdContainerEl = document.getElementById('xkcd-container');
 	imageEl = document.getElementById('xkcd-img');
 	overlayEl = document.getElementById('img-overlay');
 	titleEl = document.getElementById('xkcd-title');
@@ -34,6 +38,8 @@ function domLoaded() {
 	randButtonEl = document.getElementById('rand-button');
 	imageButtons = [prevButtonEl, nextButtonEl, randButtonEl];
 }
+
+function setXkcdContainerOpen() {}
 
 function setImageButtonsEnabled(enabled) {
 	imageButtons.forEach((b) => b.disabled = !enabled);
