@@ -12,6 +12,7 @@ let initialImageLoaded = false;
 let xkcdContainerOpen = false;
 
 let xkcdContainerEl;
+let xkcdToggleIconEl;
 let imageEl;
 let overlayEl;
 let titleEl;
@@ -27,6 +28,7 @@ let imageButtons;
 
 function domLoaded() {
 	xkcdContainerEl = document.getElementById('xkcd-container');
+	xkcdToggleIconEl = document.getElementById('xkcd-toggle-icon');
 	imageEl = document.getElementById('xkcd-img');
 	overlayEl = document.getElementById('img-overlay');
 	titleEl = document.getElementById('xkcd-title');
@@ -39,7 +41,18 @@ function domLoaded() {
 	imageButtons = [prevButtonEl, nextButtonEl, randButtonEl];
 }
 
-function setXkcdContainerOpen() {}
+function setXkcdContainerOpen(open) {
+	xkcdContainerEl.style.height = open ? 'auto' : '0';
+	xkcdContainerOpen = open;
+	xkcdToggleIconEl.classList.replace(
+		open ? 'fa-chevron-down' : 'fa-chevron-up',
+		open ? 'fa-chevron-up' : 'fa-chevron-down'
+	);
+}
+
+function toggleXkcdContainerOpen() {
+	setXkcdContainerOpen(!xkcdContainerOpen);
+}
 
 function setImageButtonsEnabled(enabled) {
 	imageButtons.forEach((b) => b.disabled = !enabled);
@@ -50,9 +63,7 @@ function setOverlayVisible(visible) {
 }
 
 function resizeAltTextHeader() {
-	const width = imageEl.width;
-
-	altEl.parentElement.width = width;
+	altEl.parentElement.style.width = imageEl.width;
 }
 
 function loadingComic(loading) {
