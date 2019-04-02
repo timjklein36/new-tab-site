@@ -6,22 +6,12 @@ class Tab {
 	toggleButton;
 	toggleIcon;
 	title;
-	newInd;
+	titleElement;
+	highlight;
+	highlightText;
+	highlightElement;
 
-	toggleOpen() {
-		this.setOpen(!this.open);
-	}
-
-	setOpen(open) {
-		this.container.style.height = open ? 'auto' : '0';
-		this.open = open;
-		this.toggleIcon.classList.replace(
-			open ? 'fa-chevron-down' : 'fa-chevron-up',
-			open ? 'fa-chevron-up' : 'fa-chevron-down'
-		);
-	}
-
-	constructor(containerId) {
+	constructor(containerId, title, highlightText, highlight) {
 		this.container = document.getElementById(containerId);
 		this.container.classList.add(
 			'd-flex',
@@ -37,10 +27,75 @@ class Tab {
 		);
 		this.container.style.height = '0';
 
-		this.toggleButton = this.container.querySelectorAll('.toggle')[0];
+		const toggleContainer = document.createElement('div');
+		toggleContainer.classList.add('m-2', 'position-absolute');
+		toggleContainer.style.top = '0';
+		toggleContainer.style.left = '0';
+		this.container.appendChild(toggleContainer);
+
+		this.toggleButton = document.createElement('button');
+		this.toggleButton.classList.add('toggle', 'btn', 'btn-primary', 'btn-sm');
 		this.toggleButton.onclick = () => this.toggleOpen();
 
-		this.toggleIcon = this.container.querySelectorAll('.toggle .toggle-icon')[0];
+		this.toggleIcon = document.createElement('i');
+		this.toggleIcon.classList.add('toggle-icon', 'fas', 'fa-chevron-down', 'fa-lg');
+		this.toggleButton.appendChild(this.toggleIcon);
+		toggleContainer.appendChild(this.toggleButton);
+
+		this.title = title;
+
+		this.titleElement = document.createElement('p');
+		this.titleElement.classList.add('d-inline-block', 'ml-3', 'font-weight-bold');
+		this.titleElement.innerText = this.title;
+
+		this.highlightElement = document.createElement('i');
+		this.highlightElement.classList.add('d-inline-block', 'text-danger');
+		this.setHighlight(highlight);
+		this.highlightElement.style.fontSize = '60%';
+		this.highlightElement.style.transform = 'translateY(-50%)';
+		this.highlightText = highlightText;
+		this.highlightElement.innerText = this.highlightText;
+
+		this.titleElement.appendChild(this.highlightElement);
+		toggleContainer.appendChild(this.titleElement);
+	}
+
+	toggleOpen() {
+		this.setOpen(!this.open);
+	}
+
+	setOpen(open) {
+		this.container.style.height = open ? 'auto' : '0';
+		this.open = open;
+		this.toggleIcon.classList.replace(
+			open ? 'fa-chevron-down' : 'fa-chevron-up',
+			open ? 'fa-chevron-up' : 'fa-chevron-down'
+		);
+	}
+
+	setHighlight(highlight) {
+		this.highlightElement.style.visibility = highlight ? 'visible' : 'hidden';
+		this.highlight = highlight;
+	}
+}
+
+class XKCDTab extends Tab {
+	currentComic;
+
+	constructor() {
+		super('xkcd-container', 'XKCD', 'NEW', false);
+	}
+
+	setCurrentComic(comic) {
+
+	}
+
+	highlightNew(date) {
+		if (date.valueOf() === new Date(Date.now()).setHours(0, 0, 0, 0)) {
+			this.setHighlight(true);
+		} else {
+			this.setHighlight(false);
+		}
 	}
 }
 
@@ -52,8 +107,6 @@ let currentComic = 1;
 const history = [];
 
 let initialImageLoaded = false;
-
-let xkcdContainerOpen = false;
 
 let xkcdContainerEl;
 let xkcdToggleIconEl;
@@ -72,7 +125,8 @@ let randButtonEl;
 let imageButtons;
 
 function domLoaded() {
-	const testTab = new Tab('test-container');
+	const testTab = new Tab('test-container', 'Test', 'DEV', true);
+	const xkcdTab = new XKCDTab();
 
 	xkcdContainerEl = document.getElementById('xkcd-container');
 	xkcdToggleIconEl = document.getElementById('xkcd-toggle-icon');
@@ -87,19 +141,6 @@ function domLoaded() {
 	nextButtonEl = document.getElementById('next-button');
 	randButtonEl = document.getElementById('rand-button');
 	imageButtons = [prevButtonEl, nextButtonEl, randButtonEl];
-}
-
-function setXkcdContainerOpen(open) {
-	xkcdContainerEl.style.height = open ? 'auto' : '0';
-	xkcdContainerOpen = open;
-	xkcdToggleIconEl.classList.replace(
-		open ? 'fa-chevron-down' : 'fa-chevron-up',
-		open ? 'fa-chevron-up' : 'fa-chevron-down'
-	);
-}
-
-function toggleXkcdContainerOpen() {
-	setXkcdContainerOpen(!xkcdContainerOpen);
 }
 
 function setImageButtonsEnabled(enabled) {
@@ -142,7 +183,7 @@ function setXKCD(sourceURL, altText, title, number, date) {
 	altEl.innerText = altText;
 	numEl.innerText = `#${number} -`;
 
-	setXKCDNewTag(date);
+	// TODO - highlightNew(date); // once moved to class
 
 	const displayDate = date
 		.toDateString()
@@ -153,14 +194,6 @@ function setXKCD(sourceURL, altText, title, number, date) {
 
 	// Testing something out...
 	altEl.width = imageEl.innerWidth;
-}
-
-function setXKCDNewTag(date) {
-	if (date.valueOf() === new Date(Date.now()).setHours(0, 0, 0, 0)) {
-		xkcdNew.style.visibility = 'visible';
-	} else {
-		xkcdNew.style.visibility = 'hidden';
-	}
 }
 
 function isInHistory(number) {
