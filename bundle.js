@@ -156,11 +156,23 @@ function fetchComic(number) {
 	xhttp.send();
 }
 
+function resetHistory() {
+    history.length = 0;
+}
+
 function random() {
 	let rand = Math.ceil(Math.random() * totalComics);
 
+    let count = 0;
+
 	while (isInHistory(rand)) {
-		++rand;
+	    if (++count > totalComics) {
+	        resetHistory();
+        }
+
+		if (++rand > totalComics) {
+		    rand = 1;
+        }
 	}
 
 	fetchComic(rand);
@@ -182,5 +194,5 @@ function previous() {
 	}
 }
 
-// Fetch the latest comic, TODO - make it a random one some of the time
+// Fetch the latest comic
 fetchComic();
