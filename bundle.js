@@ -1,5 +1,49 @@
 console.log('Custom JavaScript loaded.');
 
+class Tab {
+	container;
+	open;
+	toggleButton;
+	toggleIcon;
+	title;
+	newInd;
+
+	toggleOpen() {
+		this.setOpen(!this.open);
+	}
+
+	setOpen(open) {
+		this.container.style.height = open ? 'auto' : '0';
+		this.open = open;
+		this.toggleIcon.classList.replace(
+			open ? 'fa-chevron-down' : 'fa-chevron-up',
+			open ? 'fa-chevron-up' : 'fa-chevron-down'
+		);
+	}
+
+	constructor(containerId) {
+		this.container = document.getElementById(containerId);
+		this.container.classList.add(
+			'd-flex',
+			'justify-content-center',
+			'position-relative',
+			'mt-3',
+			'pt-5',
+			'px-4',
+			'border',
+			'rounded',
+			'shadow-sm',
+			'overflow-hidden'
+		);
+		this.container.style.height = '0';
+
+		this.toggleButton = this.container.querySelectorAll('.toggle')[0];
+		this.toggleButton.onclick = () => this.toggleOpen();
+
+		this.toggleIcon = this.container.querySelectorAll('.toggle .toggle-icon')[0];
+	}
+}
+
 const xhttp = new XMLHttpRequest();
 const asynchronous = true;
 
@@ -28,6 +72,8 @@ let randButtonEl;
 let imageButtons;
 
 function domLoaded() {
+	const testTab = new Tab('test-container');
+
 	xkcdContainerEl = document.getElementById('xkcd-container');
 	xkcdToggleIconEl = document.getElementById('xkcd-toggle-icon');
 	xkcdNew = document.getElementById('xkcd-new');
