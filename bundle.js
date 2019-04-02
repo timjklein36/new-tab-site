@@ -13,6 +13,7 @@ let xkcdContainerOpen = false;
 
 let xkcdContainerEl;
 let xkcdToggleIconEl;
+let xkcdNew;
 let imageEl;
 let overlayEl;
 let titleEl;
@@ -29,6 +30,7 @@ let imageButtons;
 function domLoaded() {
 	xkcdContainerEl = document.getElementById('xkcd-container');
 	xkcdToggleIconEl = document.getElementById('xkcd-toggle-icon');
+	xkcdNew = document.getElementById('xkcd-new');
 	imageEl = document.getElementById('xkcd-img');
 	overlayEl = document.getElementById('img-overlay');
 	titleEl = document.getElementById('xkcd-title');
@@ -93,10 +95,26 @@ function setXKCD(sourceURL, altText, title, number, date) {
 	titleEl.innerText = `"${title}"`;
 	altEl.innerText = altText;
 	numEl.innerText = `#${number} -`;
-	dateEl.innerText = `(${date})`;
+
+	setXKCDNewTag(date);
+
+	const displayDate = date
+		.toDateString()
+		.slice(4)
+		.replace(/(?<=\s\d{2})\s/, ', ');
+
+	dateEl.innerText = `(${displayDate})`;
 
 	// Testing something out...
 	altEl.width = imageEl.innerWidth;
+}
+
+function setXKCDNewTag(date) {
+	if (date.valueOf() === new Date(Date.now()).setHours(0, 0, 0, 0)) {
+		xkcdNew.style.visibility = 'visible';
+	} else {
+		xkcdNew.style.visibility = 'hidden';
+	}
 }
 
 function isInHistory(number) {
@@ -128,10 +146,7 @@ function fetchComic(number) {
 
 			addToHistory(currentComic);
 
-			const comicDate = new Date(response.year, response.month - 1, response.day)
-				.toDateString()
-				.slice(4)
-				.replace(/(?<=\s\d{2})\s/, ', ');
+			const comicDate = new Date(response.year, response.month - 1, response.day);
 
 			setXKCD(response.img, response.alt, response.title, currentComic, comicDate);
 		}
