@@ -1,5 +1,3 @@
-console.log('Custom JavaScript loaded.');
-
 class Tab {
 	container;
 	open;
@@ -80,14 +78,161 @@ class Tab {
 }
 
 class XKCDTab extends Tab {
-	currentComic;
+	totalComics;
+	currentComic = 1;
+	comicHistory = [];
+
+	buttonElements = {};
+
+	imageElement;
+	imageOverlayElement;
+	imageTitleElement;
+	imageAltTextElement;
+	imageNumberElement;
+	imageDateElement;
+
+	initialImageLoaded = false;
+
+	request = new XMLHttpRequest();
 
 	constructor() {
 		super('xkcd-container', 'XKCD', 'NEW', false);
+
+		this.buttonElements.previous = document.getElementById('prev-xkcd');
+		this.buttonElements.next = document.getElementById('next-xkcd');
+		this.buttonElements.random = document.getElementById('rand-xkcd');
+
+		this.buttonElements.previous.addEventListener('click', this.previous.bind(this));
+		this.buttonElements.next.addEventListener('click', this.next.bind(this));
+		this.buttonElements.random.addEventListener('click', this.random.bind(this));
+
+
+		this.imageElement = document.getElementById('xkcd-img');
+		this.imageElement.addEventListener('load', this.imageLoaded.bind(this));
+
+		this.imageOverlayElement = document.getElementById('xkcd-img-overlay');
+		this.imageTitleElement = document.getElementById('xkcd-title');
+		this.imageAltTextElement = document.getElementById('xkcd-alt');
+		this.imageNumberElement = document.getElementById('xkcd-num');
+		this.imageDateElement = document.getElementById('xkcd-date');
+
+		this.fetchComic();
 	}
 
-	setCurrentComic(comic) {
+	fetchComic(number) {
+		this.loadingComic(true);
 
+		if (!number) {
+			number = '';
+		}
+
+		this.request.onreadystatechange = () => {
+			if (this.request.readyState === 4 && this.request.status === 200) {
+				const response = JSON.parse(this.request.responseText);
+
+				this.currentComic = response.num;
+
+				if (!number) {
+					this.totalComics = this.currentComic;
+				}
+
+				this.addToHistory(this.currentComic);
+
+				const comicDate = new Date(response.year, response.month - 1, response.day);
+
+				this.setComicImage(response.img, response.alt, response.title, this.currentComic, comicDate);
+			}
+		};
+
+		this.request.open('GET', 'https://xkcd.now.sh/' + number, true);
+		this.request.send();
+	}
+
+	setComicImage(sourceURL, altText, title, number, date) {
+		this.imageElement.src = sourceURL;
+		this.imageElement.alt = altText;
+
+		this.imageTitleElement.innerText = `"${title}"`;
+		this.imageAltTextElement.innerText = altText;
+		this.imageNumberElement.innerText = `#${number} -`;
+
+		this.highlightNew(date);
+
+		const displayDate = date
+			.toDateString()
+			.slice(4)
+			.replace(/(?<=\s\d{2})\s/, ', ');
+
+		this.imageDateElement.innerText = `(${displayDate})`;
+
+		// Testing something out...
+		this.imageAltTextElement.width = this.imageElement.innerWidth;
+	}
+
+	loadingComic(loading) {
+		if (document.readyState === 'complete') {
+			this.setImageButtonsEnabled(!loading);
+			this.setOverlayVisible(loading);
+		}
+	}
+
+	imageLoaded() {
+		if (!this.initialImageLoaded) {
+			this.imageElement.parentElement.classList.remove('d-none');
+			this.imageElement.parentElement.classList.add('d-flex');
+			this.initialImageLoaded = true;
+		}
+
+		this.resizeAltTextHeader();
+		this.loadingComic(false);
+	}
+
+	isInHistory(number) {
+		return this.comicHistory.includes(number);
+	}
+
+	addToHistory(number) {
+		if (!this.isInHistory(number)) {
+			this.comicHistory.push(number);
+		}
+	}
+
+	resetHistory() {
+		this.comicHistory.length = 0;
+	}
+
+	random() {
+		let rand = Math.ceil(Math.random() * this.totalComics);
+
+		let count = 0;
+
+		while (this.isInHistory(rand)) {
+			if (++count > this.totalComics) {
+				this.resetHistory();
+			}
+
+			if (++rand > this.totalComics) {
+				rand = 1;
+			}
+		}
+
+		this.fetchComic(rand);
+	}
+
+	next() {
+		if (this.currentComic < this.totalComics) {
+			this.fetchComic(this.currentComic + 1);
+		} else {
+			this.fetchComic(1);
+		}
+	}
+
+	previous() {
+		if (this.currentComic > 1) {
+			this.fetchComic(this.currentComic - 1);
+		} else {
+			this.fetchComic(this.totalComics);
+		}
 	}
 
 	highlightNew(date) {
@@ -97,181 +242,21 @@ class XKCDTab extends Tab {
 			this.setHighlight(false);
 		}
 	}
+
+	setImageButtonsEnabled(enabled) {
+		Object.values(this.buttonElements).forEach((b) => b.disabled = !enabled);
+	}
+
+	setOverlayVisible(visible) {
+		this.imageOverlayElement.style.display = visible ? 'block' : 'none';
+	}
+
+	resizeAltTextHeader() {
+		this.imageAltTextElement.parentElement.style.width = this.imageElement.width;
+	}
 }
-
-const xhttp = new XMLHttpRequest();
-const asynchronous = true;
-
-let totalComics;
-let currentComic = 1;
-const history = [];
-
-let initialImageLoaded = false;
-
-let xkcdContainerEl;
-let xkcdToggleIconEl;
-let xkcdNew;
-let imageEl;
-let overlayEl;
-let titleEl;
-let altEl;
-let numEl;
-let dateEl;
-
-let prevButtonEl;
-let nextButtonEl;
-let randButtonEl;
-
-let imageButtons;
 
 function domLoaded() {
-	const testTab = new Tab('test-container', 'Test', 'DEV', true);
-	const xkcdTab = new XKCDTab();
-
-	xkcdContainerEl = document.getElementById('xkcd-container');
-	xkcdToggleIconEl = document.getElementById('xkcd-toggle-icon');
-	xkcdNew = document.getElementById('xkcd-new');
-	imageEl = document.getElementById('xkcd-img');
-	overlayEl = document.getElementById('img-overlay');
-	titleEl = document.getElementById('xkcd-title');
-	altEl = document.getElementById('xkcd-alt');
-	numEl = document.getElementById('xkcd-num');
-	dateEl = document.getElementById('xkcd-date');
-	prevButtonEl = document.getElementById('prev-button');
-	nextButtonEl = document.getElementById('next-button');
-	randButtonEl = document.getElementById('rand-button');
-	imageButtons = [prevButtonEl, nextButtonEl, randButtonEl];
+	new Tab('test-container', 'Test', 'DEV', true);
+	new XKCDTab();
 }
-
-function setImageButtonsEnabled(enabled) {
-	imageButtons.forEach((b) => b.disabled = !enabled);
-}
-
-function setOverlayVisible(visible) {
-	overlayEl.style.display = visible ? 'block' : 'none';
-}
-
-function resizeAltTextHeader() {
-	altEl.parentElement.style.width = imageEl.width;
-}
-
-function loadingComic(loading) {
-	if (document.readyState === 'complete') {
-		setImageButtonsEnabled(!loading);
-		setOverlayVisible(loading);
-	}
-}
-
-function imageLoaded() {
-	if (!initialImageLoaded) {
-		imageEl.parentElement.classList.remove('d-none');
-		imageEl.parentElement.classList.add('d-flex');
-		initialImageLoaded = true;
-	}
-
-	resizeAltTextHeader();
-	loadingComic(false);
-}
-
-function setXKCD(sourceURL, altText, title, number, date) {
-	console.log(`Setting XKCD Comic Source: ${sourceURL}\nCurrent Comic: ${currentComic}`);
-
-	imageEl.src = sourceURL;
-	imageEl.alt = altText;
-
-	titleEl.innerText = `"${title}"`;
-	altEl.innerText = altText;
-	numEl.innerText = `#${number} -`;
-
-	// TODO - highlightNew(date); // once moved to class
-
-	const displayDate = date
-		.toDateString()
-		.slice(4)
-		.replace(/(?<=\s\d{2})\s/, ', ');
-
-	dateEl.innerText = `(${displayDate})`;
-
-	// Testing something out...
-	altEl.width = imageEl.innerWidth;
-}
-
-function isInHistory(number) {
-	return history.includes(number);
-}
-
-function addToHistory(number) {
-	if (!isInHistory(number)) {
-		history.push(number);
-	}
-}
-
-function fetchComic(number) {
-	loadingComic(true);
-
-	if (!number) {
-		number = '';
-	}
-
-	xhttp.onreadystatechange = function() {
-		if (this.readyState === 4 && this.status === 200) {
-			const response = JSON.parse(this.responseText);
-
-			currentComic = response.num;
-
-			if (!number) {
-				totalComics = currentComic;
-			}
-
-			addToHistory(currentComic);
-
-			const comicDate = new Date(response.year, response.month - 1, response.day);
-
-			setXKCD(response.img, response.alt, response.title, currentComic, comicDate);
-		}
-	};
-
-	xhttp.open('GET', 'https://xkcd.now.sh/' + number, asynchronous);
-	xhttp.send();
-}
-
-function resetHistory() {
-    history.length = 0;
-}
-
-function random() {
-	let rand = Math.ceil(Math.random() * totalComics);
-
-    let count = 0;
-
-	while (isInHistory(rand)) {
-	    if (++count > totalComics) {
-	        resetHistory();
-        }
-
-		if (++rand > totalComics) {
-		    rand = 1;
-        }
-	}
-
-	fetchComic(rand);
-}
-
-function next() {
-	if (currentComic < totalComics) {
-		fetchComic(currentComic + 1);
-	} else {
-		fetchComic(1);
-	}
-}
-
-function previous() {
-	if (currentComic > 1) {
-		fetchComic(currentComic - 1);
-	} else {
-		fetchComic(totalComics);
-	}
-}
-
-// Fetch the latest comic
-fetchComic();
