@@ -143,7 +143,7 @@ class XKCDTab extends Tab {
         const displayDate = date
             .toDateString()
             .slice(4)
-            .replace(/(?<=\s\d{2})\s/, ', ');
+            .replace(/(\s\d{2})(\s)/, '$1, ');
 
         this.imageDateElement.innerText = `(${displayDate})`;
 
